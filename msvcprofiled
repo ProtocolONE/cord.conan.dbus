@@ -11,7 +11,9 @@ build_type=Debug
 
 [options]
 shared=False
+expat:shared=False
 
 [build_requires]
+expat/2.2.6@common/stable
 
 [env]
