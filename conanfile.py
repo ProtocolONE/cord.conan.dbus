@@ -6,18 +6,14 @@ class DbusConan(ConanFile):
     name = "dbus"
     version = "1.12.10"
     DBUS_FOLDER_NAME = "dbus-%s" % version
-    generators = "cmake"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False]}
-    default_options = "shared=False"
-    exports_sources = ["CMakeLists.txt"]
+    default_options = "shared=False" # UNDONE ignore options now
     description = "D-Bus is a simple system for interprocess communication and coordination."
-
+    generators = "cmake_find_package"
+    
     def build_requirements(self):
       self.build_requires("expat/2.2.6@common/stable")
-			
-    def configure(self):
-      del self.settings.compiler.libcxx
 
     def source(self):
       d_name = "dbus-%s.tar.gz" % self.version
@@ -31,8 +27,13 @@ class DbusConan(ConanFile):
 
     def build(self):
       cmake = CMake(self, parallel=True)
-      #cmake.definitions["ENABLE_MINIZIP:BOOL"] = True
-      cmake.configure(source_folder=self.source_folder + "\src\cmake")
+      
+      # HACK Dbus use different names than conan cmake_find_package-generator and also ignore EXPAT_DEFINITIONS
+      tools.replace_in_file("Findexpat.cmake", "expat_", "EXPAT_")
+      tools.replace_in_file("Findexpat.cmake", "EXPAT_INCLUDE_DIRS", "EXPAT_INCLUDE_DIR")
+      tools.replace_in_file("src/cmake/CMakeLists.txt", "find_package(EXPAT)", "find_package(EXPAT)\nadd_definitions(${EXPAT_DEFINITIONS})")
+      
+      cmake.configure(source_folder="src/cmake")
       cmake.build()
 
     def package(self):
